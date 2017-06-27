@@ -54,7 +54,7 @@ abstract class AvatarHandler {
   }
 
   /// Handles the drag start.
-  void _handleDragStart(HTMLElement draggable, DOMPoint startPosition) {
+  void _handleDragStart(HTMLElement draggable, math.Point startPosition) {
     dragStart(draggable, startPosition);
 
     // Sets the pointer-events CSS property of avatar to 'none' which enables
@@ -64,12 +64,12 @@ abstract class AvatarHandler {
   }
 
   /// Handles the drag.
-  void _handleDrag(DOMPoint startPosition, DOMPoint position) {
+  void _handleDrag(math.Point startPosition, math.Point position) {
     drag(startPosition, position);
   }
 
   /// Handles the drag end.
-  void _handleDragEnd(DOMPoint startPosition, DOMPoint position) {
+  void _handleDragEnd(math.Point startPosition, math.Point position) {
     dragEnd(startPosition, position);
 
     // Reset the pointer-events CSS property to its original value.
@@ -93,13 +93,13 @@ abstract class AvatarHandler {
   ///
   /// The [startPosition] is the position where the drag started, relative to the
   /// whole document (page coordinates).
-  void dragStart(HTMLElement draggable, DOMPoint startPosition);
+  void dragStart(HTMLElement draggable, math.Point startPosition);
 
   /// Moves the drag avatar to the new [position].
   ///
   /// The [startPosition] is the position where the drag started, [position] is the
   /// current position. Both are relative to the whole document (page coordinates).
-  void drag(DOMPoint startPosition, DOMPoint position);
+  void drag(math.Point startPosition, math.Point position);
 
   /// Called when the drag operation ends.
   ///
@@ -108,11 +108,11 @@ abstract class AvatarHandler {
   ///
   /// The [startPosition] is the position where the drag started, [position] is the
   /// current position. Both are relative to the whole document (page coordinates).
-  void dragEnd(DOMPoint startPosition, DOMPoint position);
+  void dragEnd(math.Point startPosition, math.Point position);
 
   /// Sets the CSS transform translate of [avatar]. Uses requestAnimationFrame
   /// to speed up animation.
-  void setTranslate(DOMPoint position) {
+  void setTranslate(math.Point position) {
     void updateFunction() {
       // Unsing `translate3d` to activate GPU hardware-acceleration (a bit of a hack).
       if (avatar != null) {
@@ -138,7 +138,7 @@ abstract class AvatarHandler {
   ///
   /// Note: The [avatar] must already be in the DOM for the margins to be
   /// calculated correctly.
-  void setLeftTop(DOMPoint position) {
+  void setLeftTop(math.Point position) {
     avatar.style.setProperty('left', '${position.x - marginLeft}px');
     avatar.style.setProperty('top','${position.y - marginTop}px');
   }
@@ -158,18 +158,16 @@ abstract class AvatarHandler {
 /// The [OriginalAvatarHandler] uses the draggable element itself as drag
 /// avatar. It uses absolute positioning of the avatar.
 class OriginalAvatarHandler extends AvatarHandler {
-  DOMPoint _draggableStartOffset;
+  math.Point _draggableStartOffset;
 
   @override
-  void dragStart(HTMLElement draggable, DOMPoint startPosition) {
+  void dragStart(HTMLElement draggable, math.Point startPosition) {
     // Use the draggable itself as avatar.
     avatar = draggable;
 
     // Get the start offset of the draggable (relative to the closest positioned
     // ancestor).
-    _draggableStartOffset = new DOMPoint(new DOMPointInit()
-                                         ..x=draggable.offsetLeft
-                                         ..y=draggable.offsetTop);
+    _draggableStartOffset = new math.Point(draggable.offsetLeft,draggable.offsetTop);
 
     // Ensure avatar has an absolute position.
     avatar.style.setProperty('position', 'absolute');
@@ -179,22 +177,20 @@ class OriginalAvatarHandler extends AvatarHandler {
   }
 
   @override
-  void drag(DOMPoint startPosition, DOMPoint position) {
-    setTranslate(diff(position, startPosition));
+  void drag(math.Point startPosition, math.Point position) {
+    setTranslate(position- startPosition);
   }
 
   @override
-  void dragEnd(DOMPoint startPosition, DOMPoint position) {
+  void dragEnd(math.Point startPosition, math.Point position) {
     // Remove the translate and set the new position as left/top.
     removeTranslate();
 
     // Set the new position as left/top. Prevent from moving past the top and
     // left borders as the user might not be able to grab the element any more.
-    DOMPoint constrainedPosition = new DOMPoint(new DOMPointInit()
-                                                    ..x=math.max(1, position.x)
-                                                    ..y=math.max(1, position.y));
+    math.Point constrainedPosition = new math.Point(math.max(1, position.x),math.max(1, position.y));
 
-    setLeftTop(add(diff(constrainedPosition , startPosition) , _draggableStartOffset));
+    setLeftTop(constrainedPosition - startPosition+_draggableStartOffset);
   }
 }
 
@@ -202,7 +198,7 @@ class OriginalAvatarHandler extends AvatarHandler {
 /// The avatar is removed at the end of the drag operation.
 class CloneAvatarHandler extends AvatarHandler {
   @override
-  void dragStart(HTMLElement draggable, DOMPoint startPosition) {
+  void dragStart(HTMLElement draggable, math.Point startPosition) {
     // Clone the draggable to create the avatar.
     avatar = (draggable.cloneNode(true) as HTMLElement)
       ..attributes.removeNamedItem('id')
@@ -217,18 +213,16 @@ class CloneAvatarHandler extends AvatarHandler {
 
     // Set the initial position of avatar (relative to the closest positioned
     // ancestor).
-    setLeftTop(new DOMPoint(new DOMPointInit()
-                              ..x=draggable.offsetLeft
-                              ..y=draggable.offsetTop));
+    setLeftTop(new math.Point(draggable.offsetLeft,draggable.offsetTop));
   }
 
   @override
-  void drag(DOMPoint startPosition, DOMPoint position) {
-    setTranslate(diff(position ,startPosition));
+  void drag(math.Point startPosition, math.Point position) {
+    setTranslate(position - startPosition);
   }
 
   @override
-  void dragEnd(DOMPoint startPosition, DOMPoint position) {
+  void dragEnd(math.Point startPosition, math.Point position) {
     avatar.remove();
   }
 }

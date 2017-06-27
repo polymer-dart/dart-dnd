@@ -247,7 +247,7 @@ class DropzoneEvent {
 
   /// The current mouse/touch position, relative to the whole document (page
   /// position).
-  final DOMPoint position;
+  final math.Point position;
 
   DropzoneEvent._(this.dropzoneElement, _DragInfo dragInfo)
       : draggableElement = dragInfo.element,

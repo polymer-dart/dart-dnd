@@ -53,7 +53,7 @@ abstract class _EventManager {
   }
 
   /// Handles a start event (touchStart, mouseUp, etc.).
-  void handleStart(Event event, DOMPoint position) {
+  void handleStart(Event event, math.Point position) {
     // Initialize the drag info.
     // Note: the drag is not started on touchStart but after a first valid move.
     _currentDrag = new _DragInfo(drg.id, event.currentTarget, position, avatarHandler: drg.avatarHandler, horizontalOnly: drg.horizontalOnly, verticalOnly: drg.verticalOnly);
@@ -66,7 +66,7 @@ abstract class _EventManager {
   }
 
   /// Handles a move event (touchMove, mouseMove, etc.).
-  void handleMove(Event event, DOMPoint position, DOMPoint clientPosition) {
+  void handleMove(Event event, math.Point position, math.Point clientPosition) {
     // Set the current position.
     _currentDrag.position = position;
 
@@ -85,7 +85,7 @@ abstract class _EventManager {
   }
 
   /// Handles all end events (touchEnd, mouseUp, and pointerUp).
-  void handleEnd(Event event, EventTarget target, DOMPoint position, DOMPoint clientPosition) {
+  void handleEnd(Event event, EventTarget target, math.Point position, math.Point clientPosition) {
     // Set the current position.
     _currentDrag.position = position;
 
@@ -119,7 +119,7 @@ abstract class _EventManager {
   /// Determine a target using `document.elementFromPoint` via the provided [clientPosition].
   ///
   /// Falls back to `document.body` if no element is found at the provided [clientPosition].
-  EventTarget _getRealTargetFromPoint(DOMPoint clientPosition) {
+  EventTarget _getRealTargetFromPoint(math.Point clientPosition) {
     return document.elementFromPoint(clientPosition.x, clientPosition.y) ?? body;
   }
 
@@ -129,7 +129,7 @@ abstract class _EventManager {
   /// If a [target] is provided it is tested to see if is already the correct
   /// target or if it is the drag avatar and thus must be replaced by the
   /// element underneath.
-  EventTarget _getRealTarget(DOMPoint clientPosition, {EventTarget target}) {
+  EventTarget _getRealTarget(math.Point clientPosition, {EventTarget target}) {
     // If no target was provided get it.
     if (target == null) {
       target = _getRealTargetFromPoint(clientPosition);
@@ -150,7 +150,7 @@ abstract class _EventManager {
 
   /// Recursively searches for the real target inside the Shadow DOM for all
   /// Shadow hosts with the attribute [SHADOW_DOM_RETARGET_ATTRIBUTE].
-  EventTarget _recursiveShadowDomTarget(DOMPoint clientPosition, EventTarget target) {
+  EventTarget _recursiveShadowDomTarget(math.Point clientPosition, EventTarget target) {
     // Retarget if target is a shadow host and has the specific attribute.
     if (target is Element && target.shadowRoot != null && target.attributes[SHADOW_DOM_RETARGET_ATTRIBUTE] != null) {
       Element newTarget = (target as Element).shadowRoot.elementFromPoint(clientPosition.x, clientPosition.y);
@@ -208,7 +208,7 @@ class _TouchManager extends _EventManager {
 
   @override
   void installStart() {
-    startSubs.add(drg._elementOrElementList.onTouchStart.listen((TouchEvent event) {
+    startSubs.add(onTouchStart(drg._elementOrElementList).listen((TouchEvent event) {
       // Ignore if drag is already beeing handled.
       if (_currentDrag != null) {
         return;
@@ -266,8 +266,8 @@ class _TouchManager extends _EventManager {
   }
 
   /// Returns true if there was scrolling activity instead of dragging.
-  bool isScrolling(DOMPoint currentPosition) {
-    DOMPoint delta = diff(currentPosition, _currentDrag.startPosition);
+  bool isScrolling(math.Point currentPosition) {
+    math.Point delta =currentPosition- _currentDrag.startPosition;
 
     // If horizontalOnly test for vertical movement.
     if (drg.horizontalOnly && delta.y.abs() > delta.x.abs()) {
@@ -292,7 +292,7 @@ class _MouseManager extends _EventManager {
 
   @override
   void installStart() {
-    startSubs.add(drg._elementOrElementList.onMouseDown.listen((MouseEvent event) {
+    startSubs.add(onMouseDown(drg._elementOrElementList).listen((MouseEvent event) {
       // Ignore if drag is already beeing handled.
       if (_currentDrag != null) {
         return;

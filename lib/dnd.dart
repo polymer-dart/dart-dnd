@@ -12,6 +12,6 @@ part 'src/draggable_manager.dart';
 part 'src/dropzone.dart';
 part 'src/dropzone_acceptor.dart';
 
-DOMPoint _page(Touch e) => domPoint(e.pageX, e.pageY);
+math.Point _page(Touch e) => domPoint(e.pageX, e.pageY);
 
-DOMPoint _client(Touch e) => domPoint(e.clientX, e.clientY);
+math.Point _client(Touch e) => domPoint(e.clientX, e.clientY);

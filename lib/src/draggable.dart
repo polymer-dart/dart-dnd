@@ -265,7 +265,7 @@ class Draggable {
 
       if (event is MouseEvent &&
           (clickSuppression <= 0 ||
-              distanceTo(_currentDrag.startPosition,_currentDrag.position) >
+              _currentDrag.startPosition.distanceTo(_currentDrag.position) >
                   clickSuppression)) {
         // Prevent MouseEvent from firing a click after mouseUp event if the move was significant.
         _suppressClickEvent();
@@ -288,7 +288,7 @@ class Draggable {
   /// [MouseEvent]s. We have to wait for and cancel a potential click event
   /// happening after the mouseUp event.
   void _suppressClickEvent() {
-    StreamSubscription clickPreventer = _elementOrElementList.onClick.listen((event) {
+    StreamSubscription clickPreventer = onClick(_elementOrElementList).listen((event) {
       event.stopPropagation();
       event.preventDefault();
     });
@@ -365,11 +365,11 @@ class DraggableEvent {
 
   /// Position where the drag started, relative to the whole document (page
   /// position).
-  final DOMPoint startPosition;
+  final math.Point startPosition;
 
   /// The current mouse/touch position, relative to the whole document (page
   /// position).
-  final DOMPoint position;
+  final math.Point position;
 
   /// Indicates if this [DraggableEvent] was [cancelled]. This is currently
   /// only used for [onDragEnd] events to indicate a drag end through a
@@ -393,14 +393,14 @@ class _DragInfo {
   final HTMLElement element;
 
   /// Position where the drag started.
-  final DOMPoint startPosition;
+  final math.Point startPosition;
 
   /// The [AvatarHandler] or null if there is none.
   final AvatarHandler avatarHandler;
 
   /// The current position of the mouse or touch. This position is constrained
   /// by the horizontal/vertical axis.
-  DOMPoint _position;
+  math.Point _position;
 
   /// Flag indicating if the drag started.
   bool started = false;
@@ -418,25 +418,21 @@ class _DragInfo {
 
   /// The current position, constrained by the horizontal/vertical axis
   /// depending on [horizontalOnly] and [verticalOnly].
-  DOMPoint get position => _position;
+  math.Point get position => _position;
 
   /// Sets the current position.
-  set position(DOMPoint pos) => _position = _constrainAxis(pos);
+  set position(math.Point pos) => _position = _constrainAxis(pos);
 
   /// Constrains the axis if [horizontalOnly] or [verticalOnly] is true.
-  DOMPoint _constrainAxis(DOMPoint pos) {
+  math.Point _constrainAxis(math.Point pos) {
     // Set y-value to startPosition if horizontalOnly.
     if (horizontalOnly) {
-      return new DOMPoint(new DOMPointInit()
-                              ..x=startPosition.x
-                              ..y=startPosition.y);
+      return domPoint(startPosition.x,startPosition.y);
     }
 
     // Set x-value to startPosition if verticalOnly.
     if (verticalOnly) {
-      return new DOMPoint(new DOMPointInit()
-                              ..x=startPosition.x
-                              ..y=pos.y);
+      return domPoint(startPosition.x,pos.y);
     }
 
     // Axis is not constrained.
