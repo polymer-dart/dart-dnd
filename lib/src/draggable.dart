@@ -174,7 +174,7 @@ class Draggable {
 
     } else {
       // We're on other browsers. Install touch and mouse listeners.
-      if (TouchEvent.supported) {
+      if (true /* && TouchEvent.supported*/) {
         _eventManagers.add(new _TouchManager(this));
       }
       _eventManagers.add(new _MouseManager(this));
@@ -200,10 +200,10 @@ class Draggable {
 
     // Add the css classes during the drag operation.
     if (draggingClass != null) {
-      _currentDrag.element.classes.add(draggingClass);
+      _currentDrag.element.classList.add(draggingClass);
     }
     if (draggingClassBody != null) {
-      document.body.classes.add(draggingClassBody);
+      body.classList.add(draggingClassBody);
     }
 
     // Text selections should not be a problem, but it seems better usability
@@ -265,7 +265,7 @@ class Draggable {
 
       if (event is MouseEvent &&
           (clickSuppression <= 0 ||
-              _currentDrag.startPosition.distanceTo(_currentDrag.position) >
+              distanceTo(_currentDrag.startPosition,_currentDrag.position) >
                   clickSuppression)) {
         // Prevent MouseEvent from firing a click after mouseUp event if the move was significant.
         _suppressClickEvent();
@@ -273,10 +273,10 @@ class Draggable {
 
       // Remove the css classes.
       if (draggingClass != null) {
-        _currentDrag.element.classes.remove(draggingClass);
+        _currentDrag.element.classList.remove(draggingClass);
       }
       if (draggingClassBody != null) {
-        document.body.classes.remove(draggingClassBody);
+        body.classList.remove(draggingClassBody);
       }
     }
 
@@ -334,9 +334,9 @@ class Draggable {
     // Try to remove selection from textarea or input.
     try {
       var activeElement = document.activeElement;
-      if (activeElement is TextAreaElement) {
+      if (activeElement is HTMLTextAreaElement) {
         activeElement.setSelectionRange(0, 0);
-      } else if (activeElement is InputElement) {
+      } else if (activeElement is HTMLInputElement) {
         activeElement.setSelectionRange(0, 0);
       }
     } catch (_) {
@@ -365,11 +365,11 @@ class DraggableEvent {
 
   /// Position where the drag started, relative to the whole document (page
   /// position).
-  final Point startPosition;
+  final DOMPoint startPosition;
 
   /// The current mouse/touch position, relative to the whole document (page
   /// position).
-  final Point position;
+  final DOMPoint position;
 
   /// Indicates if this [DraggableEvent] was [cancelled]. This is currently
   /// only used for [onDragEnd] events to indicate a drag end through a
@@ -390,17 +390,17 @@ class _DragInfo {
   final int draggableId;
 
   /// The dragged element.
-  final Element element;
+  final HTMLElement element;
 
   /// Position where the drag started.
-  final Point startPosition;
+  final DOMPoint startPosition;
 
   /// The [AvatarHandler] or null if there is none.
   final AvatarHandler avatarHandler;
 
   /// The current position of the mouse or touch. This position is constrained
   /// by the horizontal/vertical axis.
-  Point _position;
+  DOMPoint _position;
 
   /// Flag indicating if the drag started.
   bool started = false;
@@ -418,21 +418,25 @@ class _DragInfo {
 
   /// The current position, constrained by the horizontal/vertical axis
   /// depending on [horizontalOnly] and [verticalOnly].
-  Point get position => _position;
+  DOMPoint get position => _position;
 
   /// Sets the current position.
-  set position(Point pos) => _position = _constrainAxis(pos);
+  set position(DOMPoint pos) => _position = _constrainAxis(pos);
 
   /// Constrains the axis if [horizontalOnly] or [verticalOnly] is true.
-  Point _constrainAxis(Point pos) {
+  DOMPoint _constrainAxis(DOMPoint pos) {
     // Set y-value to startPosition if horizontalOnly.
     if (horizontalOnly) {
-      return new Point(pos.x, startPosition.y);
+      return new DOMPoint(new DOMPointInit()
+                              ..x=startPosition.x
+                              ..y=startPosition.y);
     }
 
     // Set x-value to startPosition if verticalOnly.
     if (verticalOnly) {
-      return new Point(startPosition.x, pos.y);
+      return new DOMPoint(new DOMPointInit()
+                              ..x=startPosition.x
+                              ..y=pos.y);
     }
 
     // Axis is not constrained.

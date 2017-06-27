@@ -110,8 +110,8 @@ class Dropzone {
       : this._elementOrElementList = elementOrElementList {
 
     // Install drag listener on Element or ElementList.
-    if (_elementOrElementList is ElementList) {
-      _elementOrElementList.forEach(_installCustomDragListener);
+    if (_elementOrElementList is NodeList) {
+      asIterable(_elementOrElementList).forEach(_installCustomDragListener);
     } else {
       _installCustomDragListener(_elementOrElementList);
     }
@@ -152,13 +152,13 @@ class Dropzone {
 
       // Add the css class to indicate drag over.
       if (overClass != null) {
-        (event.currentTarget as Element).classes.add(overClass);
+        (event.currentTarget as HTMLElement).classList.add(overClass);
       }
     } else {
 
       // Add the css class to indicate invalid drag over.
       if (invalidClass != null) {
-        (event.currentTarget as Element).classes.add(invalidClass);
+        (event.currentTarget as Element).classList.add(invalidClass);
       }
     }
   }
@@ -199,13 +199,13 @@ class Dropzone {
 
       // Remove the css class.
       if (overClass != null) {
-        (event.currentTarget as Element).classes.remove(overClass);
+        (event.currentTarget as Element).classList.remove(overClass);
       }
     } else {
 
       // Remove the invalid drag css class.
       if (invalidClass != null) {
-        (event.currentTarget as Element).classes.remove(invalidClass);
+        (event.currentTarget as Element).classList.remove(invalidClass);
       }
     }
   }
@@ -247,7 +247,7 @@ class DropzoneEvent {
 
   /// The current mouse/touch position, relative to the whole document (page
   /// position).
-  final Point position;
+  final DOMPoint position;
 
   DropzoneEvent._(this.dropzoneElement, _DragInfo dragInfo)
       : draggableElement = dragInfo.element,

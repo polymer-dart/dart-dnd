@@ -4,11 +4,10 @@ part of dnd;
 /// a drag avatar. A drag avatar provides visual feedback during the drag
 /// operation.
 abstract class AvatarHandler {
-
   /// Returns the [avatar] element during a drag operation.
   ///
   /// If there is no drag operation going on, [avatar] will be null.
-  Element avatar;
+  HTMLElement avatar;
 
   /// The cached top margin of [avatar].
   num _marginTop;
@@ -55,26 +54,26 @@ abstract class AvatarHandler {
   }
 
   /// Handles the drag start.
-  void _handleDragStart(Element draggable, Point startPosition) {
+  void _handleDragStart(HTMLElement draggable, DOMPoint startPosition) {
     dragStart(draggable, startPosition);
 
     // Sets the pointer-events CSS property of avatar to 'none' which enables
     // mouse and touch events to go trough to the element under the avatar.
-    _pointerEventsBeforeDrag = avatar.style.pointerEvents;
-    avatar.style.pointerEvents = 'none';
+    _pointerEventsBeforeDrag = avatar.style.getPropertyValue('pointerEvents');
+    avatar.style.setProperty('pointerEvents', 'none');
   }
 
   /// Handles the drag.
-  void _handleDrag(Point startPosition, Point position) {
+  void _handleDrag(DOMPoint startPosition, DOMPoint position) {
     drag(startPosition, position);
   }
 
   /// Handles the drag end.
-  void _handleDragEnd(Point startPosition, Point position) {
+  void _handleDragEnd(DOMPoint startPosition, DOMPoint position) {
     dragEnd(startPosition, position);
 
     // Reset the pointer-events CSS property to its original value.
-    avatar.style.pointerEvents = _pointerEventsBeforeDrag;
+    avatar.style.setProperty('pointerEvents', _pointerEventsBeforeDrag);
     _pointerEventsBeforeDrag = null;
 
     // Reset avatar.
@@ -94,13 +93,13 @@ abstract class AvatarHandler {
   ///
   /// The [startPosition] is the position where the drag started, relative to the
   /// whole document (page coordinates).
-  void dragStart(Element draggable, Point startPosition);
+  void dragStart(HTMLElement draggable, DOMPoint startPosition);
 
   /// Moves the drag avatar to the new [position].
   ///
   /// The [startPosition] is the position where the drag started, [position] is the
   /// current position. Both are relative to the whole document (page coordinates).
-  void drag(Point startPosition, Point position);
+  void drag(DOMPoint startPosition, DOMPoint position);
 
   /// Called when the drag operation ends.
   ///
@@ -109,17 +108,19 @@ abstract class AvatarHandler {
   ///
   /// The [startPosition] is the position where the drag started, [position] is the
   /// current position. Both are relative to the whole document (page coordinates).
-  void dragEnd(Point startPosition, Point position);
+  void dragEnd(DOMPoint startPosition, DOMPoint position);
 
   /// Sets the CSS transform translate of [avatar]. Uses requestAnimationFrame
   /// to speed up animation.
-  void setTranslate(Point position) {
+  void setTranslate(DOMPoint position) {
     void updateFunction() {
       // Unsing `translate3d` to activate GPU hardware-acceleration (a bit of a hack).
       if (avatar != null) {
-        avatar.style.transform = 'translate3d(${position.x}px, ${position.y}px, 0)';
+        avatar.style.setProperty('transform', 'translate3d(${position.x}px, ${position.y}px, 0)');
       }
-    };
+    }
+
+    ;
 
     // Use request animation frame to update the transform translate.
     AnimationHelper.requestUpdate(updateFunction);
@@ -129,7 +130,7 @@ abstract class AvatarHandler {
   /// from [setTranslate].
   void removeTranslate() {
     AnimationHelper.stop();
-    avatar.style.transform = null;
+    avatar.style.removeProperty('transform');
   }
 
   /// Sets the CSS left/top values of [avatar]. Takes care of any left/top
@@ -137,9 +138,9 @@ abstract class AvatarHandler {
   ///
   /// Note: The [avatar] must already be in the DOM for the margins to be
   /// calculated correctly.
-  void setLeftTop(Point position) {
-    avatar.style.left = '${position.x - marginLeft}px';
-    avatar.style.top = '${position.y - marginTop}px';
+  void setLeftTop(DOMPoint position) {
+    avatar.style.setProperty('left', '${position.x - marginLeft}px');
+    avatar.style.setProperty('top','${position.y - marginTop}px');
   }
 
   /// Caches the [marginLeft] and [marginTop] of [avatar].
@@ -148,95 +149,92 @@ abstract class AvatarHandler {
   /// operation.
   void cacheMargins() {
     // Calculate margins.
-    var computedStyles = avatar.getComputedStyle();
-    _marginLeft = num.parse(computedStyles.marginLeft.replaceFirst('px', ''),
-        (s) => 0);
-    _marginTop = num.parse(computedStyles.marginTop.replaceFirst('px', ''),
-        (s) => 0);
+    CSSStyleDeclaration computedStyles = window.getComputedStyle(avatar);
+    _marginLeft = num.parse(computedStyles.getPropertyValue('marginLeft').replaceFirst('px', ''), (s) => 0);
+    _marginTop = num.parse(computedStyles.getPropertyValue('marginTop').replaceFirst('px', ''), (s) => 0);
   }
 }
-
 
 /// The [OriginalAvatarHandler] uses the draggable element itself as drag
 /// avatar. It uses absolute positioning of the avatar.
 class OriginalAvatarHandler extends AvatarHandler {
-
-  Point _draggableStartOffset;
+  DOMPoint _draggableStartOffset;
 
   @override
-  void dragStart(Element draggable, Point startPosition) {
+  void dragStart(HTMLElement draggable, DOMPoint startPosition) {
     // Use the draggable itself as avatar.
     avatar = draggable;
 
     // Get the start offset of the draggable (relative to the closest positioned
     // ancestor).
-    _draggableStartOffset = draggable.offset.topLeft;
+    _draggableStartOffset = new DOMPoint(new DOMPointInit()
+                                         ..x=draggable.offsetLeft
+                                         ..y=draggable.offsetTop);
 
     // Ensure avatar has an absolute position.
-    avatar.style.position = 'absolute';
+    avatar.style.setProperty('position', 'absolute');
 
     // Set the initial position of the original.
     setLeftTop(_draggableStartOffset);
   }
 
   @override
-  void drag(Point startPosition, Point position) {
-    setTranslate(position - startPosition);
+  void drag(DOMPoint startPosition, DOMPoint position) {
+    setTranslate(diff(position, startPosition));
   }
 
   @override
-  void dragEnd(Point startPosition, Point position) {
+  void dragEnd(DOMPoint startPosition, DOMPoint position) {
     // Remove the translate and set the new position as left/top.
     removeTranslate();
 
     // Set the new position as left/top. Prevent from moving past the top and
     // left borders as the user might not be able to grab the element any more.
-    Point constrainedPosition = new Point(math.max(1, position.x),
-        math.max(1, position.y));
+    DOMPoint constrainedPosition = new DOMPoint(new DOMPointInit()
+                                                    ..x=math.max(1, position.x)
+                                                    ..y=math.max(1, position.y));
 
-    setLeftTop(constrainedPosition - startPosition + _draggableStartOffset);
+    setLeftTop(add(diff(constrainedPosition , startPosition) , _draggableStartOffset));
   }
 }
-
 
 /// [CloneAvatarHandler] creates a clone of the draggable element as drag avatar.
 /// The avatar is removed at the end of the drag operation.
 class CloneAvatarHandler extends AvatarHandler {
-
   @override
-  void dragStart(Element draggable, Point startPosition) {
+  void dragStart(HTMLElement draggable, DOMPoint startPosition) {
     // Clone the draggable to create the avatar.
-    avatar = (draggable.clone(true) as Element)
-        ..attributes.remove('id')
-        ..style.cursor = 'inherit';
+    avatar = (draggable.cloneNode(true) as HTMLElement)
+      ..attributes.removeNamedItem('id')
+      ..style.setProperty('cursor','inherit');
 
     // Ensure avatar has an absolute position.
-    avatar.style.position = 'absolute';
-    avatar.style.zIndex = '100';
+    avatar.style.setProperty('position', 'absolute');
+    avatar.style.setProperty('z-index','100');
 
     // Add the drag avatar to the parent element.
-    draggable.parentNode.append(avatar);
+    draggable.parentNode.appendChild(avatar);
 
     // Set the initial position of avatar (relative to the closest positioned
     // ancestor).
-    setLeftTop(draggable.offset.topLeft);
+    setLeftTop(new DOMPoint(new DOMPointInit()
+                              ..x=draggable.offsetLeft
+                              ..y=draggable.offsetTop));
   }
 
   @override
-  void drag(Point startPosition, Point position) {
-    setTranslate(position - startPosition);
+  void drag(DOMPoint startPosition, DOMPoint position) {
+    setTranslate(diff(position ,startPosition));
   }
 
   @override
-  void dragEnd(Point startPosition, Point position) {
+  void dragEnd(DOMPoint startPosition, DOMPoint position) {
     avatar.remove();
   }
 }
 
-
 /// Simple helper class to speed up animation with requestAnimationFrame.
 class AnimationHelper {
-
   static Function _lastUpdateFunction;
   static bool _updating = false;
 
@@ -247,7 +245,8 @@ class AnimationHelper {
     _lastUpdateFunction = updateFunction;
 
     if (!_updating) {
-      window.animationFrame.then((_) => _update());
+      window.requestAnimationFrame((_) => _update());
+      //window.animationFrame.then((_) => _update());
       _updating = true;
     }
   }
