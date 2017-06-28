@@ -79,7 +79,7 @@ abstract class _EventManager {
 
     // Handle drag (will also be called after drag start).
     if (_currentDrag.started) {
-      Element realTarget = _getRealTarget(clientPosition);
+      Element realTarget = _getRealTarget(clientPosition, target: (event.composedPath() ?? [null]).first);
       drg._handleDrag(event, realTarget);
     }
   }
@@ -267,7 +267,7 @@ class _TouchManager extends _EventManager {
 
   /// Returns true if there was scrolling activity instead of dragging.
   bool isScrolling(math.Point currentPosition) {
-    math.Point delta =currentPosition- _currentDrag.startPosition;
+    math.Point delta = currentPosition - _currentDrag.startPosition;
 
     // If horizontalOnly test for vertical movement.
     if (drg.horizontalOnly && delta.y.abs() > delta.x.abs()) {
@@ -335,7 +335,7 @@ class _MouseManager extends _EventManager {
   @override
   void installEnd() {
     dragSubs.add(onMouseUp(document).listen((MouseEvent event) {
-      handleEnd(event, event.target, domPoint(event.pageX, event.pageY), domPoint(event.clientX, event.clientY));
+      handleEnd(event, (event.composedPath() ?? [null]).first ?? event.target, domPoint(event.pageX, event.pageY), domPoint(event.clientX, event.clientY));
     }));
   }
 
@@ -424,7 +424,7 @@ class _PointerManager extends _EventManager {
     String endEventName = msPrefix ? 'MSPointerUp' : 'pointerup';
 
     dragSubs.add(new EventStreamProvider(endEventName).forTarget(document).listen((MouseEvent event) {
-      handleEnd(event, event.target, domPoint(event.pageX, event.pageY), domPoint(event.clientX, event.clientY));
+      handleEnd(event, (event.composedPath() ?? [null]).first ?? event.target, domPoint(event.pageX, event.pageY), domPoint(event.clientX, event.clientY));
     }));
   }
 

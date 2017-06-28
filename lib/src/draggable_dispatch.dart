@@ -1,6 +1,5 @@
 part of dnd;
 
-
 /// Dispatches [MouseEvent]s for dragEnter, dragOver, and dragLeave.
 ///
 /// Those events are only meant for communication between [Draggable]s and
@@ -48,21 +47,39 @@ class _DragEventDispatcher {
 
     if (previousTarget == target) {
       // Moved on the same element --> dispatch dragOver.
-      MouseEvent dragOverEvent = new MouseEvent(CUSTOM_DRAG_OVER);
+      MouseEvent dragOverEvent = new MouseEvent(
+          CUSTOM_DRAG_OVER,
+          new MouseEventInit()
+            ..composed = true
+            ..bubbles = true);
       target.dispatchEvent(dragOverEvent);
     } else {
       // Entered a new element --> fire dragEnter of new element.
-      MouseEvent dragEnterEvent = new MouseEvent(CUSTOM_DRAG_ENTER, new MouseEventInit()..relatedTarget = previousTarget);
+      MouseEvent dragEnterEvent = new MouseEvent(
+          CUSTOM_DRAG_ENTER,
+          new MouseEventInit()
+            ..composed = true
+            ..bubbles = true
+            ..relatedTarget = previousTarget);
       target.dispatchEvent(dragEnterEvent);
 
       // Fire dragLeave of old element (if there is one).
       if (previousTarget != null) {
-        MouseEvent dragLeaveEvent = new MouseEvent(CUSTOM_DRAG_LEAVE, new MouseEventInit()..relatedTarget = target);
+        MouseEvent dragLeaveEvent = new MouseEvent(
+            CUSTOM_DRAG_LEAVE,
+            new MouseEventInit()
+              ..composed = true
+              ..bubbles = true
+              ..relatedTarget = target);
         previousTarget.dispatchEvent(dragLeaveEvent);
       }
 
       // Also fire the first dragOver event for the new element.
-      MouseEvent dragOverEvent = new MouseEvent(CUSTOM_DRAG_OVER);
+      MouseEvent dragOverEvent = new MouseEvent(
+          CUSTOM_DRAG_OVER,
+          new MouseEventInit()
+            ..composed = true
+            ..bubbles = true);
       target.dispatchEvent(dragOverEvent);
 
       previousTarget = target;
@@ -80,7 +97,11 @@ class _DragEventDispatcher {
       return;
     }
 
-    MouseEvent dropEvent = new MouseEvent(CUSTOM_DROP);
+    MouseEvent dropEvent = new MouseEvent(
+        CUSTOM_DROP,
+        new MouseEventInit()
+          ..composed = true
+          ..bubbles = true);
     target.dispatchEvent(dropEvent);
 
     reset();
@@ -90,7 +111,11 @@ class _DragEventDispatcher {
   static void reset() {
     // Fire a last dragLeave.
     if (previousTarget != null) {
-      MouseEvent dragLeaveEvent = new MouseEvent(CUSTOM_DRAG_LEAVE);
+      MouseEvent dragLeaveEvent = new MouseEvent(
+          CUSTOM_DRAG_LEAVE,
+          new MouseEventInit()
+            ..composed = true
+            ..bubbles = true);
       previousTarget.dispatchEvent(dragLeaveEvent);
       previousTarget = null;
     }

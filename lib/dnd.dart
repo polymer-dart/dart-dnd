@@ -1,5 +1,6 @@
 library dnd;
 
+import 'dart:js_util';
 import 'package:html5/html.dart';
 import 'dart:async';
 import 'dart:math' as math;
