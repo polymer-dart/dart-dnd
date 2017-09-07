@@ -1,3 +1,8 @@
+# HTML5 Support version
+
+This is a port to `package:html5` and supports for latest version of `shadowDOM` of the wonderfull `package:dnd` original library. All credits goes to the
+original author.
+
 # Dart Drag and Drop
 
 Drag and Drop for Dart web apps with mouse and touch support.
